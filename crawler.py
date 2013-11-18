@@ -43,7 +43,6 @@ class Crawler:
         self.url = url
         self.url_count_limit = limit
         self.tasks = Queue()
-        self.tasks.put(url)
         self.counter = 0
 
     def crawl(self, url):
@@ -56,30 +55,32 @@ class Crawler:
         except:
             logger.info('ERROR: %s' % url)
 
-        bs = BeautifulSoup(data.read())
-        links=bs('a')
-
-        for link in links:
-            if ('href' in dict(link.attrs)):
-                url=urljoin(url,link['href'])
-            if url.find("'") != -1: 
-                continue
-            url=url.split('#')[0]
-
-            if url[0:4] == 'http':
-                if self.counter < self.url_count_limit:
-                    self.tasks.put(url)
-                    logger.info('ADDED: %s' % url)
-
+        try:
+            bs = BeautifulSoup(data.read())
+            links=bs('a')
+    
+            for link in links:
+                if ('href' in dict(link.attrs)):
+                    url=urljoin(url,link['href'])
+                if url.find("'") != -1: 
+                    continue
+                url=url.split('#')[0]
+    
+                if url[0:4] == 'http':
+                    if self.counter < self.url_count_limit:
+                        self.tasks.put(url)
+                        self.counter += 1
+                        logger.info('ADDED: %s' % url)
+        except:
+            pass
+    
     def run(self):
+        self.crawl(self.url)
         """For Async handling of each url"""
         while not self.tasks.empty():
-            if self.counter < self.url_count_limit:
-                self.counter += 1
-                url = self.tasks.get()
-                gevent.spawn(self.crawl, url).join()
-                logger.info('FETCH: %s' % url)
-            break
+            url = self.tasks.get()
+            gevent.spawn(self.crawl, url).join()
+            logger.info('FETCH: %s' % url)
 
 if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog [options] filename",
