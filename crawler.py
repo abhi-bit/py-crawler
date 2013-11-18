@@ -52,10 +52,6 @@ class Crawler:
         """
         try:
             data = urllib2.urlopen(url)
-        except:
-            logger.info('ERROR: %s' % url)
-
-        try:
             bs = BeautifulSoup(data.read())
             links=bs('a')
     
@@ -72,8 +68,8 @@ class Crawler:
                         self.counter += 1
                         logger.info('ADDED: %s' % url)
         except:
-            pass
-    
+            logger.info('ERROR: %s' % url)
+
     def run(self):
         self.crawl(self.url)
         """For Async handling of each url"""
